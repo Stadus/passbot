@@ -144,5 +144,5 @@ async function proceedWhenFoundTime(page) {
     await page.click('input[name="Next"]');
 
     // Bekräfta bokning
-    //await page.click('input[name="Next"]');
+    await page.click('input[name="Next"]');
 }
