@@ -2,7 +2,7 @@ const puppeteer = require("puppeteer");
 const dayjs = require("dayjs");
 
 let page = null;
-let browser = null;
+let browser;
 
 const region = 15;
 // 17 = Alingsås
