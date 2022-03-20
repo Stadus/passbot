@@ -80,7 +80,7 @@ async function retryFindTimes(page) {
 
     const dateStrings = dates.filter((x) => x.length > 0);
 
-    const maxDate = dayjs().add(31, 'day'); // TODO: CHANGE!!
+    const maxDate = dayjs().add(31, 'day');
     let wantedIndex = null;
 
     for (const date of dateStrings) {
