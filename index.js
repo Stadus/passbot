@@ -23,7 +23,6 @@ const UNAVAILABLE_DATES = [
     "2022-05-10",
     "2022-05-11",
     "2022-05-17",
-    "2022-10-16",
 ]
 
 browser = puppeteer.launch({headless: false})
