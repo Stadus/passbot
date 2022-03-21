@@ -7,6 +7,7 @@ let browser;
 const region = 15;
 // 17 = Alingsås
 // 15 = Göteborg
+const MAX_DAYS_TO_WAIT = 31;
 
 const FIRST_NAME = "Anton";
 const LAST_NAME = "Peetso";
@@ -14,15 +15,7 @@ const EMAIL = "lpstadus@gmail.com";
 const PHONE_NUMBER = "0707659438";
 
 const UNAVAILABLE_DATES = [
-    "2022-03-21",
-    "2022-03-22",
-    "2022-03-29",
-    "2022-04-06",
-    "2022-04-25",
-    "2022-04-28",
-    "2022-05-10",
-    "2022-05-11",
-    "2022-05-17",
+    "2022-03-22"
 ]
 
 browser = puppeteer.launch({headless: false})
@@ -39,22 +32,19 @@ browser = puppeteer.launch({headless: false})
         });
 
         // Start
-        await page.waitForTimeout(1000);
+        await page.waitForSelector('input[name="StartNextButton"]');
         await page.click('input[name="StartNextButton"]');
-        await page.waitForTimeout(1000);
         // Behandling av personuppgifter
+        await page.waitForSelector('input[name="AcceptInformationStorage"]');
         await page.click('input[name="AcceptInformationStorage"]'); // Jag har tagit del av ovan
-        await page.waitForTimeout(500);
         await page.click('input[name="Next"]');
         // Bor du i Sverige?
-        await page.waitForTimeout(500);
+        await page.waitForSelector('input[name="ServiceCategoryCustomers[0].ServiceCategoryId"]');
         await page.click('input[name="ServiceCategoryCustomers[0].ServiceCategoryId"]');
-        await page.waitForTimeout(200);
         await page.click('input[name="Next"]');
         // Välj tid
-        await page.waitForTimeout(500);
+        await page.waitForSelector('select#SectionId');
         await page.select('select#SectionId', region.toString()) // Välj Passexpedition
-        await page.waitForTimeout(500);
         const result = await retryFindTimes(page);
 
         if (result === true) {
@@ -66,9 +56,11 @@ browser = puppeteer.launch({headless: false})
     });
 
 async function retryFindTimes(page) {
+    await page.waitForSelector('input[name="TimeSearchFirstAvailableButton"]');
     await page.click('input[name="TimeSearchFirstAvailableButton"]'); // Första lediga tid
-    await page.waitForTimeout(1000);
+    await page.waitForTimeout(100);
 
+    await page.waitForSelector('table.timetable');
     let dates = await page.evaluate(() => {
         let data = [];
         let elements = document.querySelectorAll('table.timetable thead th');
@@ -80,8 +72,9 @@ async function retryFindTimes(page) {
 
     const dateStrings = dates.filter((x) => x.length > 0);
 
-    const maxDate = dayjs().add(31, 'day');
+    const maxDate = dayjs().add(MAX_DAYS_TO_WAIT, 'day');
     let wantedIndex = null;
+    await page.waitForSelector('.cellcontainer [data-function="timeTableCell"]:not([aria-label="Bokad"]');
 
     for (const date of dateStrings) {
         const index = dateStrings.indexOf(date);
@@ -103,15 +96,16 @@ async function retryFindTimes(page) {
         }
     }
     console.log("dateStrings", dateStrings)
-    await page.waitForTimeout(100);
 
     if (wantedIndex) {
+        console.log("wantedIndex", wantedIndex)
         const wishedDate = dateStrings[wantedIndex];
         await page.evaluate((wishedDate) => {
             let element = document.querySelector('table.timetable tbody [headers="' + wishedDate + '"] .cellcontainer [data-function="timeTableCell"]:not([aria-label="Bokad"]');
             element.click();
         }, wishedDate);
 
+        await page.waitForSelector('.pointer.timecell.text-center.selected')
         return await proceedWhenFoundTime(page);
     } else {
         await page.waitForTimeout(12000);
@@ -120,26 +114,24 @@ async function retryFindTimes(page) {
 }
 
 async function proceedWhenFoundTime(page) {
-    await page.waitForTimeout(500);
+    await page.waitForSelector('input[name="Next"]');
     await page.click('input[name="Next"]');
 
-    await page.waitForTimeout(500);
+    await page.waitForSelector('#Customers_0__BookingFieldValues_0__Value');
     await page.focus('#Customers_0__BookingFieldValues_0__Value')
     await page.keyboard.type(FIRST_NAME)
     await page.focus('#Customers_0__BookingFieldValues_1__Value')
     await page.keyboard.type(LAST_NAME)
     await page.click('input#Customers_0__Services_0__IsSelected');
-    await page.waitForTimeout(500);
-
     await page.click('input[name="Next"]');
-    await page.waitForTimeout(1000);
-
+    await page.waitForTimeout(200);
 
     // Viktig information
+    await page.waitForSelector('input[name="Next"]');
     await page.click('input[name="Next"]');
-    await page.waitForTimeout(1000);
 
     // Kontaktuppgifter
+    await page.waitForSelector('#EmailAddress');
     await page.focus('#EmailAddress')
     await page.keyboard.type(EMAIL)
     await page.focus('#ConfirmEmailAddress')
@@ -149,6 +141,7 @@ async function proceedWhenFoundTime(page) {
     await page.keyboard.type(PHONE_NUMBER)
     await page.focus('#ConfirmPhoneNumber')
     await page.keyboard.type(PHONE_NUMBER);
+
     await page.click('input#SelectedContacts_0__IsSelected');
     await page.click('input#SelectedContacts_1__IsSelected');
     await page.click('input#SelectedContacts_2__IsSelected');
@@ -156,10 +149,11 @@ async function proceedWhenFoundTime(page) {
     await page.click('input[name="Next"]');
 
     // Bekräfta bokning
+    await page.waitForSelector('input[name="Next"]');
     await page.click('input[name="Next"]');
     await page.waitForTimeout(1000);
     console.log("Completed booking!")
     await page.waitForTimeout(10000);
 
-    return true;
+    //return true;
 }
