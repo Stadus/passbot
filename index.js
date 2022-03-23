@@ -15,8 +15,11 @@ const EMAIL = "lpstadus@gmail.com";
 const PHONE_NUMBER = "0707659438";
 
 const UNAVAILABLE_DATES = [
-    "2022-03-22"
+    "2022-03-23"
 ]
+
+const BOOK_PASS = false;
+const BOOK_ID_CARD = true;
 
 browser = puppeteer.launch({headless: false})
 
@@ -45,11 +48,7 @@ browser = puppeteer.launch({headless: false})
         // Välj tid
         await page.waitForSelector('select#SectionId');
         await page.select('select#SectionId', region.toString()) // Välj Passexpedition
-        const result = await retryFindTimes(page);
-
-        if (result === true) {
-            await browser.close();
-        }
+        await retryFindTimes(page);
     })
     .catch((error) => {
         console.log(error)
@@ -114,15 +113,25 @@ async function retryFindTimes(page) {
 }
 
 async function proceedWhenFoundTime(page) {
+    await page.waitForTimeout(500);
     await page.waitForSelector('input[name="Next"]');
     await page.click('input[name="Next"]');
+    await page.waitForTimeout(500);
 
     await page.waitForSelector('#Customers_0__BookingFieldValues_0__Value');
     await page.focus('#Customers_0__BookingFieldValues_0__Value')
     await page.keyboard.type(FIRST_NAME)
     await page.focus('#Customers_0__BookingFieldValues_1__Value')
     await page.keyboard.type(LAST_NAME)
-    await page.click('input#Customers_0__Services_0__IsSelected');
+
+    if (BOOK_PASS === true) {
+        await page.click('input#Customers_0__Services_0__IsSelected'); // Bokningen gäller Pass
+    }
+
+    if (BOOK_ID_CARD === true) {
+        await page.click('input#Customers_0__Services_1__IsSelected'); // Bokningen gäller Id-kort
+    }
+
     await page.click('input[name="Next"]');
     await page.waitForTimeout(200);
 
