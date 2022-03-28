@@ -1,5 +1,9 @@
-const puppeteer = require("puppeteer");
 const dayjs = require("dayjs");
+const puppeteer = require('puppeteer-extra')
+
+// add stealth plugin and use defaults (all evasion techniques)
+const StealthPlugin = require('puppeteer-extra-plugin-stealth')
+puppeteer.use(StealthPlugin());
 
 let page = null;
 let browser;
@@ -7,26 +11,28 @@ let browser;
 const region = 15;
 // 17 = Alingsås
 // 15 = Göteborg
-const MAX_DAYS_TO_WAIT = 31;
+const MAX_DAYS_TO_WAIT = 52;
 
-const FIRST_NAME = "Anton";
-const LAST_NAME = "Peetso";
-const EMAIL = "lpstadus@gmail.com";
-const PHONE_NUMBER = "0707659438";
+const FIRST_NAME = "Test";
+const LAST_NAME = "Testsson";
+const EMAIL = "testtestsson@hotmail.com";
+const PHONE_NUMBER = "0712312312";
 
 const UNAVAILABLE_DATES = [
-    "2022-03-23"
+    "2022-03-27",
+    "2022-03-28",
 ]
 
-const BOOK_PASS = false;
-const BOOK_ID_CARD = true;
+const BOOK_PASS = true;
+const BOOK_ID_CARD = false;
 
-browser = puppeteer.launch({headless: false})
+browser = puppeteer.launch({headless: false, channel: "chrome"})
 
     .then(async (browser) => {
+
         page = await browser.newPage();
         page.setViewport({
-            width: 1400,
+            width: 1200,
             height: 900,
             isMobile: false,
         });
@@ -35,16 +41,23 @@ browser = puppeteer.launch({headless: false})
         });
 
         // Start
+        await page.waitForTimeout(500);
         await page.waitForSelector('input[name="StartNextButton"]');
+        await page.waitForTimeout(500);
         await page.click('input[name="StartNextButton"]');
+
         // Behandling av personuppgifter
+        await page.waitForTimeout(500);
         await page.waitForSelector('input[name="AcceptInformationStorage"]');
         await page.click('input[name="AcceptInformationStorage"]'); // Jag har tagit del av ovan
         await page.click('input[name="Next"]');
+
         // Bor du i Sverige?
+        await page.waitForTimeout(500);
         await page.waitForSelector('input[name="ServiceCategoryCustomers[0].ServiceCategoryId"]');
         await page.click('input[name="ServiceCategoryCustomers[0].ServiceCategoryId"]');
         await page.click('input[name="Next"]');
+
         // Välj tid
         await page.waitForSelector('select#SectionId');
         await page.select('select#SectionId', region.toString()) // Välj Passexpedition
